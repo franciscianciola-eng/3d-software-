@@ -1,0 +1,14 @@
+{
+  "name": "easy3d-studio",
+  "version": "1.0.0",
+  "description": "Browser-based 3D modeling, map building, animation, rigging and mocap retargeting — learn it in 10 minutes.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node tests/smoke.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

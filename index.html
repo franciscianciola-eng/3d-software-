@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Easy3D Studio — model · map · animate</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧊</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+
+  <header id="toolbar">
+    <div class="logo" title="Easy3D Studio">🧊 <b>Easy3D</b>&nbsp;Studio</div>
+    <button id="btn-import" class="tb accent" title="Import 3D files — or just drag &amp; drop them anywhere">⬆ Import</button>
+    <div class="dropdown" id="dd-add">
+      <button class="tb" id="btn-add">＋ Add <span class="caret">▾</span></button>
+      <div class="menu" id="menu-add"></div>
+    </div>
+    <span class="sep"></span>
+    <div class="modegroup" id="modegroup" title="Drag the colored handles in the viewport">
+      <button data-mode="translate" class="tb on" title="Move tool (W)">✥ Move</button>
+      <button data-mode="rotate" class="tb" title="Rotate tool (E)">⟳ Rotate</button>
+      <button data-mode="scale" class="tb" title="Scale tool — drag the handles to resize (R)">⤢ Scale</button>
+    </div>
+    <button id="btn-snap" class="tb" title="Snap to grid: 0.5 move · 15° rotate · 0.1 scale">⌗ Snap</button>
+    <span class="sep"></span>
+    <button id="btn-undo" class="tb icon" title="Undo (Ctrl+Z)">↶</button>
+    <button id="btn-redo" class="tb icon" title="Redo (Ctrl+Y)">↷</button>
+    <button id="btn-frame" class="tb icon" title="Frame everything (Home) · frame selection (F)">⌂</button>
+    <span class="flex"></span>
+    <div class="dropdown" id="dd-export">
+      <button class="tb" id="btn-export">⬇ Export <span class="caret">▾</span></button>
+      <div class="menu">
+        <button data-export="glb">Scene → <b>GLB</b> <small>meshes + rigs + animations</small></button>
+        <button data-export="obj">Scene → <b>OBJ</b> <small>static meshes</small></button>
+        <button data-export="stl">Scene → <b>STL</b> <small>for 3D printing</small></button>
+        <button data-export="png">Screenshot → <b>PNG</b></button>
+      </div>
+    </div>
+    <button id="btn-help" class="tb" title="Interactive tour — takes about 10 minutes">🎓 Learn it</button>
+  </header>
+
+  <div id="middle">
+    <aside id="outliner" class="panel">
+      <div class="panel-title">Scene <span id="outliner-count" class="dim"></span></div>
+      <div id="outliner-list"></div>
+      <div id="outliner-empty" class="dim small pad">Nothing here yet.<br>Click <b>＋ Add</b> or drop a 3D file.</div>
+    </aside>
+
+    <main id="viewport">
+      <div id="empty-hint">
+        <div class="big">🧊</div>
+        <div>Drop 3D files anywhere<br><span class="dim">GLB · GLTF · FBX · OBJ · STL · PLY · DAE · 3DS · 3MF · USDZ · BVH mocap</span></div>
+        <div class="dim small">…or click <b>＋ Add</b> to start with a shape</div>
+      </div>
+      <div id="drop-overlay" class="hidden"><div>⬇ Drop to import</div></div>
+      <div id="rig-toolbar" class="hidden">
+        <b>🦴 Fit the joints</b>
+        <span class="dim small">click a dot, drag it into place</span>
+        <label class="small"><input type="checkbox" id="rig-mirror" checked> Mirror L/R</label>
+        <button id="rig-bind" class="tb accent">✓ Bind skin</button>
+        <button id="rig-cancel" class="tb">✕ Cancel</button>
+      </div>
+      <div id="view-hints" class="dim small">🖱 drag orbit · right-drag pan · wheel zoom</div>
+    </main>
+
+    <aside id="props" class="panel">
+      <div id="no-selection" class="props-empty dim">
+        <div class="big">👈</div>
+        Click an object to edit it here.<br><br>
+        <span class="small">Move · rotate · resize by numbers,<br>materials, rigging &amp; animation.</span>
+      </div>
+      <div id="sel-props" class="hidden"></div>
+      <div class="panel-title">🎬 Motion library <span id="mocap-count" class="dim"></span></div>
+      <div id="mocap-list"><div class="dim small pad">Import a <b>BVH</b> mocap file or any animated FBX/GLB — clips land here, ready to apply to any rigged model.</div></div>
+    </aside>
+  </div>
+
+  <footer id="timeline">
+    <button id="tl-play" class="tb icon big-icon" title="Play / pause (Space)">▶</button>
+    <button id="tl-stop" class="tb icon" title="Stop &amp; reset">⏹</button>
+    <span id="tl-time" class="mono">0.00 / 5.00</span>
+    <div id="tl-track" title="Click / drag to scrub. Diamonds are keyframes — click to jump, ✕ to delete.">
+      <div id="tl-fill"></div>
+      <div id="tl-keys"></div>
+      <div id="tl-cursor"></div>
+    </div>
+    <button id="tl-addkey" class="tb" title="Keyframe the selected object's position/rotation/scale at the current time (K)">🔑 Key</button>
+    <select id="tl-clip" title="Animation clip playing on the selected object"><option value="-1">— no clip —</option></select>
+    <button id="tl-loop" class="tb icon on" title="Loop">🔁</button>
+    <select id="tl-speed" title="Playback speed">
+      <option value="0.25">¼×</option><option value="0.5">½×</option>
+      <option value="1" selected>1×</option><option value="2">2×</option>
+    </select>
+    <label class="small dim">len <input id="tl-dur" class="mono" title="Timeline length in seconds"></label>
+  </footer>
+
+  <div id="statusbar">
+    <span id="status-hint" class="dim small">W move · E rotate · R scale · F frame · Space play · K key · Ctrl+D duplicate · Del delete · Ctrl+Z undo</span>
+    <span class="flex"></span>
+    <span id="status-stats" class="dim small mono"></span>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<div id="modal-root" class="hidden"></div>
+<div id="tour-root" class="hidden"></div>
+<input type="file" id="file-input" multiple hidden
+  accept=".glb,.gltf,.fbx,.obj,.mtl,.stl,.ply,.dae,.3ds,.3mf,.usdz,.bvh,.bin,.png,.jpg,.jpeg,.webp,.tga,.bmp">
+<input type="file" id="tex-input" hidden accept="image/*">
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
