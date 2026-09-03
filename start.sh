@@ -33,7 +33,18 @@ elif command -v python >/dev/null 2>&1; then
   exec python serve.py
 else
   echo "  This app needs Python or Node.js (either one, both free)."
-  echo "  Mac: install Python from https://www.python.org (2 minutes), then run me again."
+  if [ "$(uname)" = "Darwin" ]; then
+    echo
+    echo "  Easiest on a Mac: Apple can install it for you."
+    echo "  An install window should pop up now - click Install, wait for it"
+    echo "  to finish, then double-click 'Start Easy3D.command' again."
+    xcode-select --install >/dev/null 2>&1
+    echo
+    echo "  (No window? Install Python from https://www.python.org instead.)"
+  else
+    echo "  Install from https://www.python.org or https://nodejs.org, then rerun."
+  fi
+  echo
   echo "  Press Enter to close."
   read -r _
   exit 1
