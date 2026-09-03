@@ -10,7 +10,9 @@ Easy3D Studio is a friendly 3D editor that runs entirely in the browser. No inst
 
 ## Run it
 
-Any static file server works (the app is 100 % client-side; the three.js engine is vendored, so it even runs offline):
+**Easiest:** double-click **`start.bat`** (Windows) or run **`sh start.sh`** (Mac/Linux) — it starts a local server and opens your browser at `http://localhost:8080`. Needs Python *or* Node.js installed (either one).
+
+Or use any static file server yourself (the app is 100 % client-side; the three.js engine is vendored, so it even runs offline):
 
 ```bash
 npm start            # → http://localhost:8080
