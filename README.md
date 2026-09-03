@@ -42,6 +42,7 @@ The app opens with an interactive guided tour (🎓 **Learn it** replays it). He
 - Click any object → drag the **colored arrows** to move it.
 - <kbd>W</kbd> move · <kbd>E</kbd> rotate · <kbd>R</kbd> scale. In Scale mode you literally **drag the sizes**.
 - **⌗ Snap** locks movement to a neat grid (0.5 units, 15°) — perfect for map building.
+- **⇧click** several models, then <kbd>Ctrl+J</kbd> (or Actions → **🧲 Join**) merges them into ONE object — positions kept, fully undoable, and if one of them is rigged the rig survives. **⧈ Weld into one mesh** goes further and fuses all parts into a single mesh (ideal for STL/3D printing).
 
 ### Minute 3 · Exact numbers
 The right sidebar shows the selection's **Position / Rotation / Scale / Size**.
@@ -78,6 +79,11 @@ This is the fun part.
 3. Done. Bones are matched by name automatically — Mixamo, CMU, Rokoko, Xsens and most custom naming schemes are recognized (`LeftArm` ≈ `L_UpperArm` ≈ `mixamorig:LeftArm` …). The motion is *retargeted*: bone-length differences and rest-pose offsets are compensated, and walking motion is scaled to your character's hip height (or check *“in place”* to strip drift).
 4. Weird rig? **⚙ Bone map…** shows the matching table so you can fix any pair by hand.
 
+**Create your own animation (Pose mode)**
+1. Select a rigged model → sidebar → **🎭 Animate (pose keyframes)**.
+2. Dots appear on every joint. Click one, rotate it with the gizmo (<kbd>E</kbd>); the yellow Hips dot also moves with <kbd>W</kbd>.
+3. Press **🔑 Key pose**, move the time cursor, pose again, key again… <kbd>Space</kbd> plays your animation. It lives in the clip dropdown as *✎ Keyframed motion* and exports inside the GLB like any other clip.
+
 **Rig a model that has no skeleton**
 1. Select it → sidebar → **Rigging → 🦴 Auto-Rig (humanoid)**.
 2. A skeleton appears fitted to the model — drag the joint dots onto shoulders/elbows/knees (L/R mirroring is on by default). Works best on characters standing in a T-pose.
@@ -98,6 +104,7 @@ No characters at hand? **＋ Add → 🧍 Mannequin** gives you a pre-rigged tes
 | <kbd>F</kbd> | Frame selection | | <kbd>K</kbd> | Add keyframe |
 | <kbd>Home</kbd> | Frame everything | | <kbd>Del</kbd> | Delete |
 | <kbd>Ctrl+D</kbd> | Duplicate | | <kbd>Esc</kbd> | Deselect / cancel |
+| <kbd>⇧click</kbd> | Multi-select | | <kbd>Ctrl+J</kbd> | Join selected models |
 | <kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> | Undo / Redo | | 🖱 drag / right-drag / wheel | Orbit / pan / zoom |
 
 ---
@@ -117,7 +124,7 @@ npm i -D playwright   # once
 npm test              # headless end-to-end: boot → rig → BVH import → retarget → animate → export → GLB round-trip
 ```
 
-13 checks cover the full pipeline, including re-importing an exported GLB and verifying the skeleton and animations survive the round trip.
+20 checks cover the full pipeline, including re-importing an exported GLB and verifying the skeleton and animations survive the round trip.
 
 ### Where to get motion files
 

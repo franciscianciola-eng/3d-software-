@@ -141,14 +141,21 @@
         <div class="dim small">…or click <b>＋ Add</b> to start with a shape</div>
       </div>
       <div id="drop-overlay" class="hidden"><div>⬇ Drop to import</div></div>
-      <div id="rig-toolbar" class="hidden">
+      <div id="rig-toolbar" class="float-toolbar hidden">
         <b>🦴 Fit the joints</b>
         <span class="dim small">click a dot, drag it into place</span>
         <label class="small"><input type="checkbox" id="rig-mirror" checked> Mirror L/R</label>
         <button id="rig-bind" class="tb accent">✓ Bind skin</button>
         <button id="rig-cancel" class="tb">✕ Cancel</button>
       </div>
-      <div id="view-hints" class="dim small">🖱 drag orbit · right-drag pan · wheel zoom</div>
+      <div id="pose-toolbar" class="float-toolbar hidden">
+        <b>🎭 Pose &amp; animate</b>
+        <span class="dim small">click a joint · <b>E</b> rotate · <b>W</b> move hips · scrub &amp; key</span>
+        <button id="pose-reset" class="tb" title="Back to rest pose (keys are kept)">↩ Rest pose</button>
+        <button id="pose-key" class="tb accent" title="Record the current pose at the current time (K)">🔑 Key pose</button>
+        <button id="pose-done" class="tb">✓ Done</button>
+      </div>
+      <div id="view-hints" class="dim small">🖱 drag orbit · right-drag pan · wheel zoom · ⇧click multi-select</div>
     </main>
 
     <aside id="props" class="panel">
@@ -183,7 +190,7 @@
   </footer>
 
   <div id="statusbar">
-    <span id="status-hint" class="dim small">W move · E rotate · R scale · F frame · Space play · K key · Ctrl+D duplicate · Del delete · Ctrl+Z undo</span>
+    <span id="status-hint" class="dim small">W move · E rotate · R scale · F frame · Space play · K key · ⇧click multi · Ctrl+J join · Ctrl+D duplicate · Del delete · Ctrl+Z undo</span>
     <span class="flex"></span>
     <span id="status-stats" class="dim small mono"></span>
   </div>

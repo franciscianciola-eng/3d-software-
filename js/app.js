@@ -14,6 +14,7 @@ export const app = {
 
   items: [],           // top-level user objects
   selected: null,
+  multi: new Set(),    // additional selected items (shift+click)
   undo: null,          // UndoStack, set by main.js
 
   mocap: [],           // motion library: {id, name, clip, sourceRoot, duration}
@@ -58,7 +59,8 @@ export const app = {
     const { undoable = true } = opts;
     const idx = this.items.indexOf(obj);
     if (idx === -1) return;
-    if (this.selected === obj) this.select(null);
+    if (this.multi.delete(obj)) this.events.emit('multi-changed');
+    if (this.selected === obj) this.select(null, { keepMulti: true });
     this.items.splice(idx, 1);
     this.contentGroup.remove(obj);
     this.events.emit('item-removed', obj);
@@ -72,10 +74,29 @@ export const app = {
     }
   },
 
-  select(obj) {
+  select(obj, opts = {}) {
+    if (!opts.keepMulti && this.multi.size) {
+      this.multi.clear();
+      this.events.emit('multi-changed');
+    }
     if (this.selected === obj) return;
     this.selected = obj;
     this.events.emit('selection-changed', obj);
+  },
+
+  /** shift+click: add/remove an item from the extended selection */
+  toggleMulti(obj) {
+    if (!obj) return;
+    if (!this.selected) { this.select(obj); return; }
+    if (obj === this.selected) return;
+    if (this.multi.has(obj)) this.multi.delete(obj);
+    else this.multi.add(obj);
+    this.events.emit('multi-changed');
+  },
+
+  /** primary + shift-selected items, in scene order */
+  selectedItems() {
+    return this.items.filter(i => i === this.selected || this.multi.has(i));
   },
 
   addMocap(name, clip, sourceRoot) {

@@ -23,7 +23,9 @@ const STEPS = [
     html: `Click an object, then drag the colored handles in the viewport.
       <br><br><kbd>W</kbd> move &nbsp;·&nbsp; <kbd>E</kbd> rotate &nbsp;·&nbsp; <kbd>R</kbd> scale
       <br><br>With <b>Scale</b> active you literally <i>drag the size</i> of things.
-      Turn on <b>⌗ Snap</b> for tidy grid placement.`,
+      Turn on <b>⌗ Snap</b> for tidy grid placement.
+      <br><br><b>⇧click</b> selects several models — <kbd>Ctrl+J</kbd> (or Actions →
+      🧲 Join) merges them into one object.`,
   },
   {
     target: '#props',
@@ -65,7 +67,9 @@ const STEPS = [
       Select any <b>rigged</b> model and press <b>▶ Apply</b> — bones are matched
       by name automatically, and ⚙ lets you fix the map by hand.
       <br><br>Static model? Sidebar → <b>Rigging → Auto‑Rig</b>: drag a few dots
-      onto the body, click <b>Bind skin</b>, done — it now accepts any mocap.`,
+      onto the body, click <b>Bind skin</b>, done — it now accepts any mocap.
+      <br><br>And to make your <i>own</i> animation: <b>🎭 Animate (pose keyframes)</b> —
+      rotate joints, press <b>🔑</b>, move the time cursor, pose again. Play!`,
   },
   {
     target: '#dd-export',

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { app } from './app.js';
 import { toast, fmt } from './utils.js';
+import { poseActive, capturePoseData } from './posemode.js';
 
 const state = {
   time: 0,
@@ -161,6 +162,13 @@ export function addKeyAtCurrentTime() {
     q: item.quaternion.toArray(),
     s: item.scale.toArray(),
   };
+  let posedBones = 0;
+  if (poseActive(item)) {
+    const pd = capturePoseData(item);
+    key.pose = pd.pose;
+    key.bonePos = pd.bonePos;
+    posedBones = Object.keys(pd.pose).length;
+  }
   const existing = keys.findIndex(k => Math.abs(k.t - t) < 1 / 60);
   const prev = existing >= 0 ? keys[existing] : null;
   if (existing >= 0) keys[existing] = key; else keys.push(key);
@@ -181,10 +189,12 @@ export function addKeyAtCurrentTime() {
     },
   });
 
-  if (keys.length >= 2 && activeSel(item) === '-1') {
+  if (keys.length >= 2 && (posedBones ? activeSel(item) !== 'k' : activeSel(item) === '-1')) {
     item.userData.activeClipSel = 'k';
+    autoDuration();
   }
-  toast(`🔑 Key at ${fmt(t, 2)}s (${keys.length} total${keys.length < 2 ? ' — add another at a different time to create motion' : ''})`, 'good', 2600);
+  const what = posedBones ? `pose (${posedBones} bones)` : 'key';
+  toast(`🔑 ${what[0].toUpperCase() + what.slice(1)} at ${fmt(t, 2)}s (${keys.length} total${keys.length < 2 ? ' — add another at a different time to create motion' : ''})`, 'good', 2600);
   refreshClipSelect();
   refreshKeys();
 }
@@ -213,29 +223,62 @@ function markKeysDirty(item) {
   refreshKeys();
 }
 
-/** Build an AnimationClip from an item's authored keys (null if < 2 keys). */
+/** flip alternate quats so linear interpolation takes the short way round */
+function hemisphere(list) {
+  let prev = null;
+  return list.map(quat => {
+    let out = quat;
+    if (prev && (prev[0] * out[0] + prev[1] * out[1] + prev[2] * out[2] + prev[3] * out[3]) < 0) {
+      out = [-out[0], -out[1], -out[2], -out[3]];
+    }
+    prev = out;
+    return out;
+  });
+}
+
+/**
+ * Build an AnimationClip from an item's authored keys (null if < 2 keys).
+ * Keys always carry the object's root transform; keys recorded in 🎭 Pose
+ * mode additionally carry every bone's rotation (+ root-bone positions),
+ * which become bone tracks here.
+ */
 export function buildKeyframeClip(item) {
   const keys = item.userData?.keys || [];
   if (keys.length < 2) return null;
   const times = keys.map(k => k.t);
-  const p = [], q = [], s = [];
-  let prevQ = null;
-  for (const k of keys) {
-    p.push(...k.p);
-    let quat = k.q;
-    if (prevQ && (prevQ[0] * quat[0] + prevQ[1] * quat[1] + prevQ[2] * quat[2] + prevQ[3] * quat[3]) < 0) {
-      quat = [-quat[0], -quat[1], -quat[2], -quat[3]];
-    }
-    q.push(...quat);
-    prevQ = quat;
-    s.push(...k.s);
-  }
   const n = item.name;
-  return new THREE.AnimationClip(`${n} keys`, times[times.length - 1], [
-    new THREE.VectorKeyframeTrack(`${n}.position`, times, p),
-    new THREE.QuaternionKeyframeTrack(`${n}.quaternion`, times, q),
-    new THREE.VectorKeyframeTrack(`${n}.scale`, times, s),
-  ]);
+  const tracks = [
+    new THREE.VectorKeyframeTrack(`${n}.position`, times, keys.flatMap(k => k.p)),
+    new THREE.QuaternionKeyframeTrack(`${n}.quaternion`, times,
+      hemisphere(keys.map(k => k.q)).flat()),
+    new THREE.VectorKeyframeTrack(`${n}.scale`, times, keys.flatMap(k => k.s)),
+  ];
+
+  // bone tracks from pose keys
+  const boneNames = new Set();
+  for (const k of keys) for (const b of Object.keys(k.pose || {})) boneNames.add(b);
+  for (const bone of boneNames) {
+    const ks = keys.filter(k => k.pose?.[bone]);
+    if (ks.length < 2) continue; // a single pose sample can't animate
+    tracks.push(new THREE.QuaternionKeyframeTrack(
+      `${bone}.quaternion`,
+      ks.map(k => k.t),
+      hemisphere(ks.map(k => k.pose[bone])).flat()
+    ));
+  }
+  const posNames = new Set();
+  for (const k of keys) for (const b of Object.keys(k.bonePos || {})) posNames.add(b);
+  for (const bone of posNames) {
+    const ks = keys.filter(k => k.bonePos?.[bone]);
+    if (ks.length < 2) continue;
+    tracks.push(new THREE.VectorKeyframeTrack(
+      `${bone}.position`,
+      ks.map(k => k.t),
+      ks.flatMap(k => k.bonePos[bone])
+    ));
+  }
+
+  return new THREE.AnimationClip(`${n} keys`, times[times.length - 1], tracks);
 }
 
 /* ---------------- UI ---------------- */

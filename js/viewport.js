@@ -92,6 +92,21 @@ export function initViewport() {
   boxHelper.visible = false;
   scene.add(boxHelper);
 
+  // dimmer boxes for shift-selected extras
+  const multiHelpers = [];
+  const rebuildMultiHelpers = () => {
+    for (const h of multiHelpers) { scene.remove(h); h.dispose?.(); }
+    multiHelpers.length = 0;
+    for (const it of app.multi) {
+      const h = new THREE.Box3Helper(new THREE.Box3().setFromObject(it), 0x8b93a7);
+      h.userData.target = it;
+      scene.add(h);
+      multiHelpers.push(h);
+    }
+  };
+  app.events.on('multi-changed', rebuildMultiHelpers);
+  app.events.on('items-changed', rebuildMultiHelpers);
+
   Object.assign(app, { renderer, scene, camera, orbit, tc, contentGroup });
 
   // ---- picking (click that isn't a drag) ----
@@ -121,7 +136,11 @@ export function initViewport() {
       while (o && o.parent !== contentGroup) o = o.parent;
       if (o && o.visible) { item = o; break; }
     }
-    app.select(item);
+    if (e.shiftKey) {
+      if (item) app.toggleMulti(item);
+    } else {
+      app.select(item);
+    }
   });
 
   // resize
@@ -159,6 +178,7 @@ export function initViewport() {
     orbit.update();
     for (const t of app.tickers) t(dt);
     if (boxHelper.visible && app.selected) updateSelectionBox();
+    for (const h of multiHelpers) h.box.setFromObject(h.userData.target);
     renderer.render(scene, camera);
     frames++;
     statTimer += dt;

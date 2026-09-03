@@ -19,7 +19,8 @@ function rebuild() {
   count.textContent = app.items.length ? `(${app.items.length})` : '';
 
   for (const item of app.items) {
-    const row = el('div', 'out-row' + (item === app.selected ? ' sel' : '') + (item.visible ? '' : ' hidden-obj'));
+    const row = el('div', 'out-row' + (item === app.selected ? ' sel' : '') +
+      (app.multi.has(item) ? ' msel' : '') + (item.visible ? '' : ' hidden-obj'));
     const icon = el('span', 'oicon', iconFor(item));
     const name = el('span', 'oname');
     name.textContent = item.name;
@@ -43,7 +44,10 @@ function rebuild() {
     });
 
     row.append(icon, name, eye, del);
-    row.addEventListener('click', () => app.select(item));
+    row.addEventListener('click', e => {
+      if (e.shiftKey) app.toggleMulti(item);
+      else app.select(item);
+    });
     row.addEventListener('dblclick', e => {
       if (e.target === eye || e.target === del) return;
       startRename(item, name);
@@ -88,5 +92,6 @@ function startRename(item, nameEl) {
 export function initOutliner() {
   app.events.on('items-changed', rebuild);
   app.events.on('selection-changed', rebuild);
+  app.events.on('multi-changed', rebuild);
   rebuild();
 }

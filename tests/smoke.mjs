@@ -269,7 +269,70 @@ try {
   });
   check('material color edit', matOk === 'ff0000', `#${matOk}`);
 
-  // 13. guided tour renders and completes (fresh page without the done-flag)
+  // 13. join two models into one (and undo/redo)
+  const joinRes = await page.evaluate(() => {
+    const before = easy3d.app.items.length;
+    const b1 = easy3d.addPrimitive('box');
+    const b2 = easy3d.addPrimitive('box');
+    b2.position.x = 1.5;
+    easy3d.app.select(b1);
+    easy3d.app.toggleMulti(b2);
+    const joined = easy3d.app.ops.joinSelected();
+    const afterJoin = easy3d.app.items.length;
+    let meshes = 0;
+    joined.traverse(o => { if (o.isMesh) meshes++; });
+    easy3d.app.undo.undo();
+    const afterUndo = easy3d.app.items.length;
+    const restored = easy3d.app.items.includes(b1) && easy3d.app.items.includes(b2);
+    easy3d.app.undo.redo();
+    const afterRedo = easy3d.app.items.length;
+    return { ok: afterJoin === before + 1 && meshes === 2 && afterUndo === before + 2 && restored && afterRedo === before + 1, meshes };
+  });
+  check('join models (+ undo/redo)', joinRes.ok, `${joinRes.meshes} meshes in joined object`);
+
+  // 14. weld joined object into a single mesh
+  const weld = await page.evaluate(() => {
+    const item = easy3d.app.selected; // the joined object
+    let vertsBefore = 0, meshesBefore = 0;
+    item.traverse(o => { if (o.isMesh) { meshesBefore++; vertsBefore += o.geometry.attributes.position.count; } });
+    easy3d.bake(item);
+    let meshesAfter = 0, vertsAfter = 0;
+    item.traverse(o => { if (o.isMesh) { meshesAfter++; vertsAfter += o.geometry.attributes.position.count; } });
+    return { ok: meshesBefore === 2 && meshesAfter === 1 && vertsAfter === vertsBefore, vertsAfter };
+  });
+  check('weld into single mesh', weld.ok, `${weld.vertsAfter} verts`);
+
+  // 15. pose animator: author a bone animation on the mannequin
+  await page.evaluate(() => easy3d.app.select(easy3d.app.items[1]));
+  const poseBtn = await page.locator('#sel-props button:has-text("Animate (pose")').count();
+  const poseRes = await page.evaluate(() => {
+    const man = easy3d.app.items[1];
+    easy3d.pose.enter(man);
+    const barShown = !document.getElementById('pose-toolbar').classList.contains('hidden');
+    let arm = null;
+    man.traverse(o => { if (!arm && o.isBone && o.name === 'LeftArm') arm = o; });
+    easy3d.timeline.setTime(0);
+    arm.rotation.z = 0.9;
+    easy3d.timeline.addKey();
+    easy3d.timeline.setTime(1.0);
+    arm.rotation.z = -0.8;
+    easy3d.timeline.addKey();
+    easy3d.pose.exit(man);
+    const keys = man.userData.keys;
+    const hasPose = keys.length === 2 && keys.every(k => k.pose && Object.keys(k.pose).length > 20);
+    const onKeyClip = man.userData.activeClipSel === 'k';
+    easy3d.timeline.setTime(0);
+    const q0 = arm.quaternion.toArray();
+    easy3d.timeline.setTime(0.95);
+    const q1 = arm.quaternion.toArray();
+    const moved = q0.some((v, i) => Math.abs(v - q1[i]) > 1e-3);
+    easy3d.timeline.stop();
+    return { ok: barShown && hasPose && onKeyClip && moved, keys: keys.length, bones: Object.keys(keys[0]?.pose || {}).length };
+  });
+  check('pose animator (bone keyframes play back)', poseBtn === 1 && poseRes.ok,
+    `${poseRes.keys} pose keys × ${poseRes.bones} bones`);
+
+  // 16. guided tour renders and completes (fresh page without the done-flag)
   {
     const p2 = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await p2.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });

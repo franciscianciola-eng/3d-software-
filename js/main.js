@@ -10,6 +10,8 @@ import { initTimeline, togglePlay, addKeyAtCurrentTime, setTime, stop as timelin
 import { initAnimatePanel } from './animate.js';
 import { initRigToolbar, rigEditActive, cancelJointEdit } from './autorig.js';
 import { PRIMITIVES, addPrimitive } from './primitives.js';
+import { joinItems, bakeItem } from './join.js';
+import { enterPoseMode, exitPoseMode, poseActive, handlePoseKey, initPoseToolbar } from './posemode.js';
 import { openFiles } from './importers.js';
 import { exportScene } from './exporters.js';
 import { startTour, maybeAutoStart } from './tutorial.js';
@@ -24,6 +26,7 @@ try {
   initTimeline();
   initAnimatePanel();
   initRigToolbar();
+  initPoseToolbar();
 } catch (e) {
   console.error('Easy3D boot failed:', e);
   window.__showBootOverlay?.("The 3D engine couldn't start", [
@@ -53,7 +56,11 @@ app.ops = {
     copy.userData = {
       isItem: true,
       clips: (ud.clips || []).map(r => ({ name: r.name, clip: r.clip })),
-      keys: (ud.keys || []).map(k => ({ t: k.t, p: [...k.p], q: [...k.q], s: [...k.s] })),
+      keys: (ud.keys || []).map(k => ({
+        t: k.t, p: [...k.p], q: [...k.q], s: [...k.s],
+        pose: k.pose ? Object.fromEntries(Object.entries(k.pose).map(([n, v]) => [n, [...v]])) : undefined,
+        bonePos: k.bonePos ? Object.fromEntries(Object.entries(k.bonePos).map(([n, v]) => [n, [...v]])) : undefined,
+      })),
       activeClipSel: ud.activeClipSel,
       rigged: ud.rigged,
     };
@@ -69,6 +76,29 @@ app.ops = {
     app.addItem(copy, { select: true });
     toast(`⧉ Duplicated → <b>${copy.name}</b>`, 'good', 2200);
   },
+
+  deleteSelected() {
+    const doomed = app.selectedItems();
+    if (!doomed.length) return;
+    if (doomed.length === 1) { app.removeItem(doomed[0]); return; }
+    const rec = doomed.map(it => ({ it, idx: app.items.indexOf(it) }));
+    for (const { it } of rec) app.removeItem(it, { undoable: false });
+    app.undo.push({
+      label: `Delete ${rec.length} objects`,
+      undo: () => {
+        for (const r of [...rec].sort((a, b) => a.idx - b.idx)) {
+          app.contentGroup.add(r.it);
+          app.items.splice(Math.min(r.idx, app.items.length), 0, r.it);
+        }
+        app.events.emit('items-changed');
+        app.select(rec[0].it);
+      },
+      redo: () => { for (const { it } of rec) app.removeItem(it, { undoable: false }); },
+    });
+    toast(`🗑 Deleted ${rec.length} objects`, '', 2400);
+  },
+
+  joinSelected() { return joinItems(app.selectedItems()); },
 };
 
 /* ---------------- toolbar ---------------- */
@@ -177,7 +207,10 @@ window.addEventListener('keydown', e => {
   }
   if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); app.undo.redo(); return; }
   if ((e.ctrlKey || e.metaKey) && k === 'd') { e.preventDefault(); app.ops.duplicateSelected(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 'j') { e.preventDefault(); app.ops.joinSelected(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  if (['w', 'e', 'r', 'escape'].includes(k) && handlePoseKey(k)) return;
 
   switch (k) {
     case 'w': if (!rigEditActive()) setGizmoMode('translate'); break;
@@ -186,10 +219,11 @@ window.addEventListener('keydown', e => {
     case 'k': addKeyAtCurrentTime(); break;
     case ' ': e.preventDefault(); togglePlay(); break;
     case 'delete': case 'backspace':
-      if (app.selected) app.removeItem(app.selected);
+      app.ops.deleteSelected();
       break;
     case 'escape':
       if (rigEditActive()) cancelJointEdit();
+      else if (app.multi.size) app.select(app.selected); // clear extras
       else app.select(null);
       break;
   }
@@ -199,6 +233,9 @@ window.addEventListener('keydown', e => {
 window.easy3d = {
   app, addPrimitive, openFiles, exportScene, focusSelection, THREE,
   timeline: { setTime, togglePlay, stop: timelineStop, addKey: addKeyAtCurrentTime, state: timelineState },
+  join: joinItems,
+  bake: bakeItem,
+  pose: { enter: enterPoseMode, exit: exitPoseMode, active: poseActive },
 };
 window.__EASY3D_READY = true;
 document.dispatchEvent(new CustomEvent('easy3d-ready'));

@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { app } from './app.js';
 import { el, fmt, bindNumberDrag, toast } from './utils.js';
 import { isRigged, startJointEdit, setSkeletonVisible, rigEditActive } from './autorig.js';
+import { enterPoseMode, poseActive } from './posemode.js';
+import { joinItems, bakeItem } from './join.js';
 import { focusSelection } from './viewport.js';
 import { loadTextureFromFile } from './importers.js';
 
@@ -189,8 +191,14 @@ export function initProperties() {
   const bDup = el('button', 'tb', '⧉ Duplicate (Ctrl+D)');
   bDup.addEventListener('click', () => app.ops?.duplicateSelected());
   const bDel = el('button', 'tb', '🗑 Delete');
-  bDel.addEventListener('click', () => { if (sel()) app.removeItem(sel()); });
-  br.append(bFocus, bDup, bDel);
+  bDel.addEventListener('click', () => app.ops?.deleteSelected());
+  const bJoin = el('button', 'tb', '🧲 Join models');
+  bJoin.title = 'Merge the selected models into one object — ⇧click to select several first (Ctrl+J)';
+  bJoin.addEventListener('click', () => joinItems(app.selectedItems()));
+  const bBake = el('button', 'tb', '⧈ Weld into one mesh');
+  bBake.title = 'Fuse every part of this object into a single mesh (for export / 3D printing)';
+  bBake.addEventListener('click', () => { if (sel()) bakeItem(sel()); });
+  br.append(bFocus, bDup, bJoin, bBake, bDel);
   sa.appendChild(br);
   host.appendChild(sa);
 
@@ -211,8 +219,8 @@ export function initProperties() {
 
   app.events.on('selection-changed', refreshAll);
   app.events.on('transform-changed', o => { if (o === sel()) refreshNumbers(); });
-  app.events.on('clips-changed', () => {});
   app.events.on('rig-edit-changed', () => rebuildRig());
+  app.events.on('pose-changed', () => rebuildRig());
   refreshAll();
 }
 
@@ -395,6 +403,10 @@ function rebuildRig() {
     body.appendChild(el('div', 'small dim', '🦴 Fitting joints… use the bar at the top of the viewport to Bind or Cancel.'));
     return;
   }
+  if (poseActive(o)) {
+    body.appendChild(el('div', 'small dim', '🎭 Posing… rotate joints, press 🔑 to record poses, then Done in the bar at the top of the viewport.'));
+    return;
+  }
 
   if (isRigged(o)) {
     let bones = 0;
@@ -402,6 +414,13 @@ function rebuildRig() {
     const row = el('div', 'row');
     row.appendChild(el('span', 'chip good', `🦴 Rigged · ${bones} bones`));
     body.appendChild(row);
+
+    const arow = el('div', 'btnrow');
+    const bPose = el('button', 'tb accent', '🎭 Animate (pose keyframes)…');
+    bPose.title = 'Rotate joints and record poses on the timeline — your own animation clip';
+    bPose.addEventListener('click', () => enterPoseMode(o));
+    arow.appendChild(bPose);
+    body.appendChild(arow);
 
     const srow = el('div', 'row');
     const cb = document.createElement('input');
