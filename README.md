@@ -2,6 +2,9 @@
 
 **Model · build maps · animate · rig · mocap — in your browser, learnable in 10 minutes.**
 
+### ▶ [Open the app — franciscianciola-eng.github.io/3d-software-](https://franciscianciola-eng.github.io/3d-software-/)
+*Nothing to install — it runs right in the browser and auto-updates on every push.*
+
 Easy3D Studio is a friendly 3D editor that runs entirely in the browser. No installs, no accounts, no build step — clone, serve, create. It imports basically any 3D format, lets you resize things by dragging handles or typing exact sizes, builds maps from ready-made shapes, animates with keyframes, and — the headline act — **applies motion-capture files to any rigged model**, including models *you* rig yourself with the built-in one-click Auto-Rig.
 
 ![Easy3D Studio](docs/screenshot.png)
