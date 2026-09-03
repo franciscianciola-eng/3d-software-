@@ -11,8 +11,11 @@ echo.
 
 where py >nul 2>nul
 if not errorlevel 1 goto py
-where python >nul 2>nul
+
+rem "python" can be a fake Microsoft Store shortcut - ignore that one
+where python 2>nul | findstr /i /v "WindowsApps" >nul 2>nul
 if not errorlevel 1 goto python
+
 where node >nul 2>nul
 if not errorlevel 1 goto node
 
@@ -25,15 +28,20 @@ exit /b 1
 
 :py
 start "" "%URL%"
-py -m http.server 8080
-exit /b
+py serve.py
+goto end
 
 :python
 start "" "%URL%"
-python -m http.server 8080
-exit /b
+python serve.py
+goto end
 
 :node
 start "" "%URL%"
 node serve.mjs
-exit /b
+goto end
+
+:end
+echo.
+echo   Server stopped.
+pause

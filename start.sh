@@ -16,11 +16,11 @@ echo
 ) &
 
 if command -v python3 >/dev/null 2>&1; then
-  exec python3 -m http.server 8080
+  exec python3 serve.py
 elif command -v node >/dev/null 2>&1; then
   exec node serve.mjs
 elif command -v python >/dev/null 2>&1; then
-  exec python -m http.server 8080
+  exec python serve.py
 else
   echo "  This app needs Python or Node.js (either one)."
   echo "  Install from https://www.python.org or https://nodejs.org and rerun."

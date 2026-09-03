@@ -16,13 +16,23 @@ import { startTour, maybeAutoStart } from './tutorial.js';
 import { toast } from './utils.js';
 
 /* ---------------- boot ---------------- */
-app.undo = new UndoStack();
-initViewport();
-initOutliner();
-initProperties();
-initTimeline();
-initAnimatePanel();
-initRigToolbar();
+try {
+  app.undo = new UndoStack();
+  initViewport();
+  initOutliner();
+  initProperties();
+  initTimeline();
+  initAnimatePanel();
+  initRigToolbar();
+} catch (e) {
+  console.error('Easy3D boot failed:', e);
+  window.__showBootOverlay?.("The 3D engine couldn't start", [
+    String((e && e.message) || e),
+    '• If this mentions WebGL or a context: turn ON hardware acceleration in your browser settings (usually under System), then restart the browser.',
+    '• Trying a different browser (Chrome or Edge) also rules out driver issues.',
+  ]);
+  throw e;
+}
 
 /* ---------------- ops shared with panels ---------------- */
 app.ops = {

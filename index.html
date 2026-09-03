@@ -14,6 +14,84 @@
   }
 }
 </script>
+<script>
+/* Boot guard — deliberately old-school (non-module) JS so it still runs when
+   the app's modules are blocked, and can explain WHY instead of leaving a
+   pretty page with dead buttons. */
+(function () {
+  var errs = [];
+  window.addEventListener('error', function (e) {
+    try {
+      if (e && e.target && (e.target.src || e.target.href)) {
+        errs.push('failed to load ' + (e.target.src || e.target.href).split('/').slice(-2).join('/'));
+      } else if (e && e.message) {
+        errs.push(e.message);
+      }
+    } catch (x) {}
+  }, true);
+
+  window.__showBootOverlay = function (title, lines) {
+    var old = document.getElementById('boot-overlay');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var o = document.createElement('div');
+    o.id = 'boot-overlay';
+    o.setAttribute('style',
+      'position:fixed;inset:0;z-index:99999;background:rgba(10,12,18,.96);color:#dfe3ec;' +
+      'font-family:system-ui,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px;');
+    var box = document.createElement('div');
+    box.setAttribute('style',
+      'max-width:560px;background:#1a1d26;border:1px solid #4f8cff;border-radius:14px;padding:26px 30px;line-height:1.65;font-size:15px;');
+    var h = document.createElement('div');
+    h.setAttribute('style', 'font-size:19px;font-weight:700;margin-bottom:12px;');
+    h.textContent = title;
+    box.appendChild(h);
+    for (var i = 0; i < lines.length; i++) {
+      var p = document.createElement('div');
+      p.setAttribute('style', 'margin:7px 0;color:' + (lines[i].indexOf('•') === 0 ? '#dfe3ec' : '#aab3c7') + ';');
+      p.textContent = lines[i];
+      box.appendChild(p);
+    }
+    o.appendChild(box);
+    (document.body || document.documentElement).appendChild(o);
+  };
+
+  function showLater(fn) {
+    if (document.body) fn();
+    else window.addEventListener('DOMContentLoaded', fn);
+  }
+
+  if (location.protocol === 'file:') {
+    showLater(function () {
+      window.__showBootOverlay('Almost there — use the launcher, not the file', [
+        'You opened index.html straight from the folder. Browsers block 3D apps from running that way, so nothing works.',
+        'Close this tab, go to the Easy3D folder and instead:',
+        '• Windows: double-click  start.bat',
+        '• Mac / Linux: open a terminal there and run:  sh start.sh',
+        'That starts a tiny local server and opens the app properly. Python or Node.js must be installed — either one, both are free.',
+      ]);
+    });
+    return;
+  }
+
+  setTimeout(function () {
+    if (window.__EASY3D_READY === true || document.getElementById('boot-overlay')) return;
+    var lines = [
+      'The page loaded, but the app code did not start. This almost always has one of these fixes:',
+      '• Update your browser — you need Chrome/Edge 89+, Firefox 108+, or Safari 16.4+',
+      '• Start the app with start.bat (Windows) or sh start.sh (Mac/Linux) — they serve the files with the right settings',
+      '• Check the black server window for an error message',
+      'Then reload this page.',
+    ];
+    if (errs.length) lines.push('Technical details: ' + errs.slice(0, 3).join(' · '));
+    window.__showBootOverlay("The app couldn't start", lines);
+  }, 6000);
+
+  document.addEventListener('easy3d-ready', function () {
+    var o = document.getElementById('boot-overlay');
+    if (o && o.parentNode) o.parentNode.removeChild(o);
+  });
+})();
+</script>
 </head>
 <body>
 <div id="app">
