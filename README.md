@@ -10,7 +10,9 @@ Easy3D Studio is a friendly 3D editor that runs entirely in the browser. No inst
 
 ## Run it
 
-**Easiest:** double-click **`start.bat`** (Windows) or run **`sh start.sh`** (Mac/Linux) — it starts a local server and opens your browser at `http://localhost:8080`. Needs Python *or* Node.js installed (either one).
+**Easiest:** the app auto-deploys to GitHub Pages on every push (see `.github/workflows/pages.yml`) — open the site URL shown under the repo's **Actions → Deploy to GitHub Pages** run and you're in, nothing to install.
+
+**Locally:** double-click **`start.bat`** (Windows) or **`Start Easy3D.command`** (Mac — first time: right-click → Open) or run **`sh start.sh`** (any Unix). It starts a local server and opens your browser at `http://localhost:8080`. Needs Python *or* Node.js installed (either one).
 
 Or use any static file server yourself (the app is 100 % client-side; the three.js engine is vendored, so it even runs offline):
 

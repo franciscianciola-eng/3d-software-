@@ -15,14 +15,26 @@ echo
   fi
 ) &
 
-if command -v python3 >/dev/null 2>&1; then
+# macOS ships a fake /usr/bin/python3 that only offers to install developer
+# tools — treat python3 as real only if it actually is
+have_python3() {
+  command -v python3 >/dev/null 2>&1 || return 1
+  if [ "$(uname)" = "Darwin" ] && [ "$(command -v python3)" = "/usr/bin/python3" ]; then
+    xcode-select -p >/dev/null 2>&1 || return 1
+  fi
+  return 0
+}
+
+if have_python3; then
   exec python3 serve.py
 elif command -v node >/dev/null 2>&1; then
   exec node serve.mjs
 elif command -v python >/dev/null 2>&1; then
   exec python serve.py
 else
-  echo "  This app needs Python or Node.js (either one)."
-  echo "  Install from https://www.python.org or https://nodejs.org and rerun."
+  echo "  This app needs Python or Node.js (either one, both free)."
+  echo "  Mac: install Python from https://www.python.org (2 minutes), then run me again."
+  echo "  Press Enter to close."
+  read -r _
   exit 1
 fi
